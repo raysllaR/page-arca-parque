@@ -10,7 +10,7 @@ var itensCarrinho = {
     valor: () => {
         let valor = 0.00;
 
-        itensCarrinho.listItens.forEach(item => valor += item.quantidade * item.tarifarios[0].valor);
+        itensCarrinho.listItens.forEach(item => valor += item.quantidade * item.valorVendaItem);
 
         return valor;
         
@@ -24,40 +24,78 @@ var itensCarrinho = {
 };
 var itensApi = new Map();
 let idButtonDayPasseioSelecionado;
+
 window.addEventListener('load', async ()  => {
     //consumo da API
     await getApiItens();
-
+    
     //Elements
     const floatButton = document.querySelector('.float-button');
     const divCarrinho = document.querySelector('.carrinho-pai');
     const divCarrinhoNav = document.querySelector('.carrinho-nav');
     const divCarrinhoBody = document.querySelector('#carrinho-body');
     const divCarrinhoBodyHideDiv = document.querySelector('#carrinho-dentro-hide');
-    const closeDiv = document.querySelector('.div-close-carrinho-body');
+    //const closeDiv = document.querySelector('.div-close-carrinho-body');
     const arrowiconAll = document.querySelectorAll('.icon-setinha-animation');
     const buttonsDayPasseio = document.querySelectorAll('.button-day-passeio');
 
     //Events
-    divCarrinhoNav.addEventListener('click', (e) => backToCarrinhoBody(divCarrinhoBody, divCarrinhoBodyHideDiv, closeDiv, arrowiconAll, e));
+    divCarrinhoNav.addEventListener('click', (e) => backToCarrinhoBody(divCarrinhoBody, divCarrinhoBodyHideDiv, /*closeDiv,*/ arrowiconAll, e));
     floatButton.addEventListener('click', scrollTop);
-    divCarrinhoBody.addEventListener('click', (e) => changeClass(divCarrinhoBody, divCarrinhoBodyHideDiv, closeDiv, arrowiconAll, e));
-    
-    closeDiv.addEventListener('click', (e) => {
-        closeDiv.style.display = 'none';
-        fechar(e, divCarrinhoBody, divCarrinhoBodyHideDiv, arrowiconAll);
-    });
+    divCarrinhoBody.addEventListener('click', (event) => {
+        changeClass(divCarrinhoBody, divCarrinhoBodyHideDiv, /*closeDiv,*/ arrowiconAll, event)});
     
     buttonsDayPasseio.forEach(element => {
         element.addEventListener('click', () =>  {
             changeButton(element, buttonsDayPasseio);
         })
     });
-    
+
+    window.addEventListener('change', () =>{
+        console.log(window.screen.width);
+    });  
+
+    document.addEventListener('click', (event) => {
+         
+        if(event.target.classList.contains('div-carrinho-detalhes') 
+       || event.target.classList.contains('carrinho-nav') 
+       || event.target.classList.contains('delete-item-carrinho') 
+       || event.target.classList.contains('item-svg')
+       || event.target.classList.contains('carrinhos-elements-inside-top')){
+            if((event.target.classList.contains('delete-item-carrinho') && itensCarrinho.listItens == 0) || (event.target.classList.contains('carrinhos-elements-inside-top') && itensCarrinho.listItens == 0) ){
+                fechar(event);
+            }
+
+        } else if(document.querySelector('#carrinho-body').classList.contains('carrinho-body-clicked')){
+            console.log("Fechei")
+            fechar(event);
+        }
+    });
+
     changeListCarrinho();
+    
+    document.querySelectorAll('.close-hide-carrinho').forEach( item => {
+
+        item.addEventListener('click', (event) => {
+            if(!event.target.classList.contains('delete-item-carrinho')){
+                fechar(event)
+            }
+        });
+    });
+
+    window.addEventListener('resize', () => {
+        if(window.screen.width < 546){
+            document.querySelectorAll('.outro-dia').forEach(item => {
+                item.innerText = "Outro dia"
+            });
+        } else{
+            document.querySelectorAll('.outro-dia').forEach(item => {
+                item.innerText = "Comprar para outro dia"
+            });
+        }
+    });
 
     window.addEventListener('scroll', () => positionScroll(floatButton, divCarrinho, divCarrinhoNav));
-
 });
 
 const changeValorAndQtdCarrinho = () => {
@@ -72,12 +110,6 @@ const changeValorAndQtdCarrinho = () => {
         
         carrinho => carrinho.innerText = itensCarrinho.quantidade()
     );
-
-    
-}
-
-const precoIngresso = () => {
-    
 }
 
 const changeListCarrinho = () => {
@@ -114,6 +146,7 @@ const changeListCarrinho = () => {
         for(const [index, item] of itensCarrinho.listItens.entries()) {
             const div = document.createElement('div');
             div.classList.add('list-itens-carrinho');
+            //div.classList.add('close-hide-carrinho');
     
             div.innerHTML += 
             `
@@ -121,7 +154,16 @@ const changeListCarrinho = () => {
             <div class="list-itens-carrinho-rigth">
                 <span>${item.quantidade}x</span>
                 <span>R$ ${addVirgula(item.tarifarios[0].valor)}</span>
-                <svg id="${index}" name="${item.iditens}" class="delete-item-carrinho" stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                <div class="item-svg">
+                    <svg id="${index}" name="${item.iditens}" class="delete-item-carrinho" stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+                        <polyline class="item-svg" points="3 6 5 6 21 6"></polyline>
+                        <path class="item-svg" d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <line class="item-svg" x1="10" y1="11" x2="10" y2="17"></line>
+                        <line class="item-svg" x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                </div>
+            
+                
             </div>
            
             `
@@ -133,7 +175,7 @@ const changeListCarrinho = () => {
             `
             <div class="bottom-carrinho-hide-finalizar-compra">
                 <button class="button-carrinho-footer button-carrinho-footer-left">
-                    <span>Comprar para outro dia</span>
+                    <span class="outro-dia">Comprar para outro dia</span>
                     <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg" style="width: 17px; height: 17px; margin-right: 5px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                 </button>
                 <button name="finalizar-venda" class="button-carrinho-footer button-carrinho-footer-rigth">
@@ -147,6 +189,7 @@ const changeListCarrinho = () => {
         itensCarrinho.salvarListLocalStorage();
         const div = document.createElement('div');
         div.classList.add('nenhum-item-selecionado');
+        //div.classList.add('close-hide-carrinho');
         div.innerText = "Nenhum produto adicionado ao carrinho";
         
         divPaiHide.appendChild(div);
@@ -158,6 +201,8 @@ const changeListCarrinho = () => {
         buttonsFinalizarVenda.forEach(btnFinalizarVenda => {
             btnFinalizarVenda.classList.remove('button-carrinho-footer-rigth');
         });
+
+        //fechar();
     }
 
 }
@@ -259,11 +304,19 @@ const eventsButtonCard = () => {
         let button = buttonCardComprarDireito[i];
 
         button.addEventListener('click', () => {
-
             let item = itensCarrinho.listItens.find(item => item.iditens == button.value);
-            item.quantidade++;
-            buttonCardComprarMeio[i].innerText = item.quantidade;      
-            changeListCarrinho();  
+            if(item.limiteMaximoVenda == null){
+                item.quantidade++;
+                buttonCardComprarMeio[i].innerText = item.quantidade;      
+                changeListCarrinho();
+            }  else{
+                let maxItens = item.limiteMaximoVenda;
+                if(maxItens > item.quantidade){
+                    item.quantidade++;
+                    buttonCardComprarMeio[i].innerText = item.quantidade;      
+                    changeListCarrinho();
+                }
+            }
         });
 
     }
@@ -311,7 +364,6 @@ const getApiItens = async (key) => {
         let res = await fetch(requestGetItens);
         let resObject = await res.json();
 
-        console.log("?? " + resObject.itens)
         if(res.status == 200 && resObject.itens.length > 0) {
             //TurnOf page Load
             document.querySelector('.body-page').style.display = 'flex';
@@ -339,6 +391,9 @@ const getApiItens = async (key) => {
             });
             
         }
+
+        itensApi.maximoQtdParcelamento = resObject.maximoQtdParcelamento;
+
         await itensCarrinho.getListLocalStorage();
         addGrupoHtml(listGrupo);
 
@@ -359,7 +414,7 @@ const addGrupoHtml = (listGrupo) => {
         
         if(index == 0){
             idButtonDayPasseioSelecionado = button.getAttribute('id');
-            button.style.borderBottom = '3px solid #0c62ad';
+            button.classList.add('color-grupo');
         }
     });
 
@@ -392,21 +447,46 @@ const addCardHtml = () => {
                         idadeAltura = `Idade máxima ${objectItem['idade_maxima'] ?? ""} anos`;
                     }
                 });
+
+            item.tarifarios.forEach(tarifariosItens =>{
+                let dateEndTarifario = new Date(tarifariosItens['data_fim'] + " " + tarifariosItens['hora_fim']); 
+                let dateNow = new Date();
+                if(dateNow <= dateEndTarifario)  {
+                    item.valorVendaItem = tarifariosItens.valor;
+                    item.limiteMaximoVenda = tarifariosItens['limite_quantidade_vendido_tarifario'];
+                }
+                else {
+                    item.valorVendaItem = item.valorOriginal;    
+                }
+            });
             
+            let valorSameOriginal = (item.valorOriginal === item.valorVendaItem);
+
             const div = document.createElement('div');
             div.classList.add('card');
             div.classList.add('shadow');
             div.innerHTML = `
-    
+            
             <div class="card-img" value="${idButtonDayPasseioSelecionado}">
                 <img class="img-card" src="${item.imagem}">
             </div>
             <div class="card-div-corpo">
                 <div class="nome-preco">
-                    <span>${item.nome}</span>
-                    <span>${item.valorOriginal ?? ""}</span>
+                <strong>${item.nome}</strong>
+                ${!valorSameOriginal 
+                    ? `<div class="precos-card"><span class="preco-riscado">R$${addVirgula(item.valorOriginal)}</span>
+                        <span class="preco-destaque">
+                            <span class="tipo-moeda">R$</span>
+                            ${addVirgula(item.valorVendaItem)}
+                        </span>
+                       </div>`
+                    : `<div class="precos-card"> <span class="preco-destaque">
+                        <span class="tipo-moeda">R$</span>${addVirgula(item.valorVendaItem)}</span>
+                        <span class="dividido-em-ate">em até ${itensApi.maximoQtdParcelamento}x</span>
+                       </div>`}
+                
                 </div>
-                <div class="descricao">${item.descricao}</div>
+                <div class="card-descricao">${item.descricao}</div>
             </div>
             <div class="termos">
                 <div>
@@ -440,41 +520,50 @@ const addCardHtml = () => {
     eventsButtonCard();
 }
 
-const fechar = (e, divCarrinhoBody, divCarrinhoBodyHideDiv, arrowiconAll) => {
+const fechar = (event) => {
+    const divCarrinhoBody = document.querySelector('#carrinho-body');
+    const divCarrinhoBodyHideDiv = document.querySelector('#carrinho-dentro-hide');
+    const arrowsIcons = document.querySelectorAll('.icon-setinha-animation');
+    arrowsIcons.forEach(arrowicon => arrowicon.style.animationName = 'arrow-down');
+
+
+    let closed = (!event.target.classList.contains('delete-item-carrinho') || itensCarrinho.listItens.length == 0);
+
     const have = divCarrinhoBody.classList.contains('carrinho-body-clicked');
-    arrowiconAll.forEach (arrowicon => arrowicon.style.animationName = 'arrow-down');
-    if(!(e.target.classList.contains('carrinho-element')) && have){
+    if(have && closed){
+        console.log("event "+ event.target)
         divCarrinhoBody.classList.remove('carrinho-body-clicked');
         divCarrinhoBodyHideDiv.setAttribute('style', 'display: none !important'); 
     }
 }
 
-const backToCarrinhoBody = (divCarrinhoBody, divCarrinhoBodyHideDiv, closeDiv, arrowiconAll, e) => {
+const backToCarrinhoBody = (divCarrinhoBody, divCarrinhoBodyHideDiv, /*closeDiv,*/ arrowiconAll, e) => {
     const scroll = this.scrollY;
     const nav = document.querySelector('.header-page');
-
-    changeClass(divCarrinhoBody, divCarrinhoBodyHideDiv, closeDiv, arrowiconAll, e);
+    if(!document.querySelector('#carrinho-body').classList.contains('carrinho-body-clicked'))
+    changeClass(divCarrinhoBody, divCarrinhoBodyHideDiv, /*closeDiv,*/ arrowiconAll, e);
 
     scrollTop(nav.clientHeight);
 }
 
 const changeButton = (element, buttonsDayPasseio) => {
-    buttonsDayPasseio.forEach(element => element.style.border = 'none');
-    element.style.borderBottom = '3px solid #0c62ad';
+    buttonsDayPasseio.forEach(element => element.classList.remove('color-grupo'));
+    element.classList.add('color-grupo');
     idButtonDayPasseioSelecionado = element.getAttribute('id');
     addCardHtml();
 }   
 
-const changeClass = ( divCarrinhoBody, divCarrinhoBodyHideDiv, closeDiv, arrowiconAll, e) => {
+const changeClass = ( divCarrinhoBody, divCarrinhoBodyHideDiv, /*closeDiv,*/ arrowiconAll, event) => {
     const notHave = !divCarrinhoBody.classList.contains('carrinho-body-clicked');
-
+    
     if(notHave){
         divCarrinhoBody.classList.add('carrinho-body-clicked');
-        if(closeDiv != null) closeDiv.style.display = 'block';
-        arrowiconAll.forEach (arrowicon => arrowicon.style.animationName = 'arrow-up');
+        //if(closeDiv != null) closeDiv.style.display = 'block';
+        arrowiconAll.forEach(arrowicon => arrowicon.style.animationName = 'arrow-up');
         divCarrinhoBodyHideDiv.style.display = 'flex'; 
     } else{
-        fechar(e, divCarrinhoBody, divCarrinhoBodyHideDiv, arrowiconAll);
+        console.log("Fechei");
+        fechar(event);
     }
 
    
