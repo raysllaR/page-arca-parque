@@ -1,3 +1,6 @@
+var itensApi = new Map();
+var idButtonDayPasseioSelecionado;
+
 var itensCarrinho = {
     listItens: [],
     quantidade: () => {
@@ -22,81 +25,61 @@ var itensCarrinho = {
         itensCarrinho.listItens = JSON.parse(localStorage.getItem('listItensCarrinho'));
     }
 };
-var itensApi = new Map();
-let idButtonDayPasseioSelecionado;
 
+//Loading
 window.addEventListener('load', async ()  => {
     //consumo da API
     await getApiItens();
+    //Mudar a lista do carrinho
+    await changeListCarrinho();
+
+    //Events element body
+    document.querySelector('.carrinho-nav').addEventListener('click', backToCarrinhoBody);
+    document.querySelector('.float-button').addEventListener('click', scrollTop);
+    document.querySelector('#carrinho-body').addEventListener('click', expandedCarrinho);
     
-    //Elements
-    const floatButton = document.querySelector('.float-button');
-    const divCarrinho = document.querySelector('.carrinho-pai');
-    const divCarrinhoNav = document.querySelector('.carrinho-nav');
-    const divCarrinhoBody = document.querySelector('#carrinho-body');
-    const divCarrinhoBodyHideDiv = document.querySelector('#carrinho-dentro-hide');
-    //const closeDiv = document.querySelector('.div-close-carrinho-body');
-    const arrowiconAll = document.querySelectorAll('.icon-setinha-animation');
-    const buttonsDayPasseio = document.querySelectorAll('.button-day-passeio');
-
-    //Events
-    divCarrinhoNav.addEventListener('click', (e) => backToCarrinhoBody(divCarrinhoBody, divCarrinhoBodyHideDiv, /*closeDiv,*/ arrowiconAll, e));
-    floatButton.addEventListener('click', scrollTop);
-    divCarrinhoBody.addEventListener('click', (event) => {
-        changeClass(divCarrinhoBody, divCarrinhoBodyHideDiv, /*closeDiv,*/ arrowiconAll, event)});
+    document.querySelectorAll('.button-day-passeio').forEach(
+        buttonsDayPasseio =>
+            buttonsDayPasseio.addEventListener('click', () =>  {
+                changeButton(buttonsDayPasseio);
+            })
+    );
     
-    buttonsDayPasseio.forEach(element => {
-        element.addEventListener('click', () =>  {
-            changeButton(element, buttonsDayPasseio);
-        })
-    });
+    document.querySelectorAll('.close-hide-carrinho').forEach( item => item.addEventListener('click', fechar));
 
-    window.addEventListener('change', () =>{
-        console.log(window.screen.width);
-    });  
+    //Event tela 
+    window.addEventListener('click', eventCloseCarrinhoExpandedClickBody);
+    window.addEventListener('resize', changeTextButtonOutroDia);
+    window.addEventListener('scroll', () => positionScroll());
+});
 
-    document.addEventListener('click', (event) => {
+const changeTextButtonOutroDia = () => {
+    if(window.screen.width < 546){
+        document.querySelectorAll('.outro-dia').forEach(item => {
+            item.innerText = "Outro dia"
+        });
+    } else{
+        document.querySelectorAll('.outro-dia').forEach(item => {
+            item.innerText = "Comprar para outro dia"
+        });
+    }
+}
+
+const eventCloseCarrinhoExpandedClickBody = (event) => {
+    const eventTargetCarrinhoElementsInsideTop = event.target.classList.contains('carrinhos-elements-inside-top');
          
-        if(event.target.classList.contains('div-carrinho-detalhes') 
+       if(event.target.classList.contains('div-carrinho-detalhes') 
        || event.target.classList.contains('carrinho-nav') 
        || event.target.classList.contains('delete-item-carrinho') 
        || event.target.classList.contains('item-svg')
-       || event.target.classList.contains('carrinhos-elements-inside-top')){
-            if((event.target.classList.contains('delete-item-carrinho') && itensCarrinho.listItens == 0) || (event.target.classList.contains('carrinhos-elements-inside-top') && itensCarrinho.listItens == 0) ){
+       || eventTargetCarrinhoElementsInsideTop){
+            if((event.target.classList.contains('delete-item-carrinho') && itensCarrinho.listItens.length == 0) 
+            || (eventTargetCarrinhoElementsInsideTop && itensCarrinho.listItens.length == 0))
                 fechar(event);
-            }
-
-        } else if(document.querySelector('#carrinho-body').classList.contains('carrinho-body-clicked')){
-            console.log("Fechei")
+            else console.log("?? o que tá rolando aqui?")
+        } else if(document.querySelector('#carrinho-body').classList.contains('carrinho-body-clicked'))
             fechar(event);
-        }
-    });
-
-    changeListCarrinho();
-    
-    document.querySelectorAll('.close-hide-carrinho').forEach( item => {
-
-        item.addEventListener('click', (event) => {
-            if(!event.target.classList.contains('delete-item-carrinho')){
-                fechar(event)
-            }
-        });
-    });
-
-    window.addEventListener('resize', () => {
-        if(window.screen.width < 546){
-            document.querySelectorAll('.outro-dia').forEach(item => {
-                item.innerText = "Outro dia"
-            });
-        } else{
-            document.querySelectorAll('.outro-dia').forEach(item => {
-                item.innerText = "Comprar para outro dia"
-            });
-        }
-    });
-
-    window.addEventListener('scroll', () => positionScroll(floatButton, divCarrinho, divCarrinhoNav));
-});
+}
 
 const changeValorAndQtdCarrinho = () => {
     document.querySelectorAll('.span-carrinho-valor')
@@ -115,7 +98,6 @@ const changeValorAndQtdCarrinho = () => {
 const changeListCarrinho = () => {
     
     changeValorAndQtdCarrinho();    
-    //[id="${button.getAttribute('name')}"]
     const buttonsFinalizarVenda = document.querySelectorAll('[name = "finalizar-venda"]');
     const divPaiHide = document.querySelector('#carrinho-dentro-hide');
     divPaiHide.innerHTML = "";
@@ -139,14 +121,11 @@ const changeListCarrinho = () => {
         </span>
         `;
 
-        divPaiHide.appendChild(divDiaSelecionado);
-    
-        
+        divPaiHide.appendChild(divDiaSelecionado);    
     
         for(const [index, item] of itensCarrinho.listItens.entries()) {
             const div = document.createElement('div');
             div.classList.add('list-itens-carrinho');
-            //div.classList.add('close-hide-carrinho');
     
             div.innerHTML += 
             `
@@ -161,9 +140,7 @@ const changeListCarrinho = () => {
                         <line class="item-svg" x1="10" y1="11" x2="10" y2="17"></line>
                         <line class="item-svg" x1="14" y1="11" x2="14" y2="17"></line>
                     </svg>
-                </div>
-            
-                
+                </div>    
             </div>
            
             `
@@ -189,7 +166,6 @@ const changeListCarrinho = () => {
         itensCarrinho.salvarListLocalStorage();
         const div = document.createElement('div');
         div.classList.add('nenhum-item-selecionado');
-        //div.classList.add('close-hide-carrinho');
         div.innerText = "Nenhum produto adicionado ao carrinho";
         
         divPaiHide.appendChild(div);
@@ -201,8 +177,6 @@ const changeListCarrinho = () => {
         buttonsFinalizarVenda.forEach(btnFinalizarVenda => {
             btnFinalizarVenda.classList.remove('button-carrinho-footer-rigth');
         });
-
-        //fechar();
     }
 
 }
@@ -246,8 +220,6 @@ const eventsButtonCard = () => {
     const buttonCardComprarDireito = document.querySelectorAll('.button-direito');
     const buttonCardComprarEsquerdo = document.querySelectorAll('.button-esquerdo');
     const buttonCardComprarMeio = document.querySelectorAll('.button-meio');
-
-    
 
     let keysMap = Object.keys(itensApi);
 
@@ -322,7 +294,6 @@ const eventsButtonCard = () => {
     }
 }
 
-
 const getApiItens = async (key) => {
 
     let listGrupo = [];
@@ -360,7 +331,6 @@ const getApiItens = async (key) => {
     );
 
     try{
-        //console.time("paozinho de queijo");
         let res = await fetch(requestGetItens);
         let resObject = await res.json();
 
@@ -370,9 +340,7 @@ const getApiItens = async (key) => {
             document.querySelector('.body-page').style.marginTop = '0px';
             document.querySelector('.body-page-load').style.display = 'none';
         }  else
-            throw Exception("Erro ao carregar dados do servidor!"); 
-
-        //console.timeEnd("paozinho de queijo");
+            throw new Exception("Erro ao carregar dados do servidor!"); 
         
         for(grupo of resObject.grupos) {
             listGrupo.push(grupo);
@@ -499,7 +467,6 @@ const addCardHtml = () => {
                 </div>
             </div>
             <div class="card-div-button">
-               
                <div class="div-card-button-elements">
                 <button id="${item.iditens}" value="${item.iditens}" ${itemJaNoCarrinho ? `style = "display:none"` : `style = "display:block"`} class="button-card-full">Comprar</button>
                 <div id="${item.iditens}" ${itemJaNoCarrinho ? `style = "display:flex"` : `style = "display:none"`} class="pai-button-card-compra pai-button-card-compra-after">
@@ -509,79 +476,72 @@ const addCardHtml = () => {
                 </div>
                </div>
             </div>
-        
             `;
+
             document.querySelector('.cards').appendChild(div);
         });
-
-
-        
 
     eventsButtonCard();
 }
 
 const fechar = (event) => {
-    const divCarrinhoBody = document.querySelector('#carrinho-body');
-    const divCarrinhoBodyHideDiv = document.querySelector('#carrinho-dentro-hide');
-    const arrowsIcons = document.querySelectorAll('.icon-setinha-animation');
-    arrowsIcons.forEach(arrowicon => arrowicon.style.animationName = 'arrow-down');
-
-
-    let closed = (!event.target.classList.contains('delete-item-carrinho') || itensCarrinho.listItens.length == 0);
-
-    const have = divCarrinhoBody.classList.contains('carrinho-body-clicked');
-    if(have && closed){
-        console.log("event "+ event.target)
-        divCarrinhoBody.classList.remove('carrinho-body-clicked');
-        divCarrinhoBodyHideDiv.setAttribute('style', 'display: none !important'); 
+    if(!event.target.classList.contains('delete-item-carrinho') || itensCarrinho.listItens.length == 0){
+        const divCarrinhoBody = document.querySelector('#carrinho-body');
+        const divCarrinhoBodyHideDiv = document.querySelector('#carrinho-dentro-hide');
+        const arrowsIcons = document.querySelectorAll('.icon-setinha-animation');
+        arrowsIcons.forEach(arrowicon => arrowicon.style.animationName = 'arrow-down');
+    
+        let closed = (!event.target.classList.contains('delete-item-carrinho') || itensCarrinho.listItens.length == 0);
+    
+        const have = divCarrinhoBody.classList.contains('carrinho-body-clicked');
+        if(have && closed){
+            divCarrinhoBody.classList.remove('carrinho-body-clicked');
+            divCarrinhoBodyHideDiv.setAttribute('style', 'display: none !important'); 
+        }           
     }
 }
 
-const backToCarrinhoBody = (divCarrinhoBody, divCarrinhoBodyHideDiv, /*closeDiv,*/ arrowiconAll, e) => {
+const backToCarrinhoBody = (event) => {
     const scroll = this.scrollY;
     const nav = document.querySelector('.header-page');
     if(!document.querySelector('#carrinho-body').classList.contains('carrinho-body-clicked'))
-    changeClass(divCarrinhoBody, divCarrinhoBodyHideDiv, /*closeDiv,*/ arrowiconAll, e);
+    expandedCarrinho(event);
 
     scrollTop(nav.clientHeight);
 }
 
-const changeButton = (element, buttonsDayPasseio) => {
-    buttonsDayPasseio.forEach(element => element.classList.remove('color-grupo'));
-    element.classList.add('color-grupo');
-    idButtonDayPasseioSelecionado = element.getAttribute('id');
+const changeButton = (buttonSelected) => {
+    document.querySelectorAll('.button-day-passeio').forEach(buttonDayPasseio => buttonDayPasseio.classList.remove('color-grupo'));
+    buttonSelected.classList.add('color-grupo');
+    idButtonDayPasseioSelecionado = buttonSelected.getAttribute('id');
     addCardHtml();
 }   
 
-const changeClass = ( divCarrinhoBody, divCarrinhoBodyHideDiv, /*closeDiv,*/ arrowiconAll, event) => {
+const expandedCarrinho = (event) => {
+    const divCarrinhoBody = document.querySelector('#carrinho-body');
+
     const notHave = !divCarrinhoBody.classList.contains('carrinho-body-clicked');
     
     if(notHave){
         divCarrinhoBody.classList.add('carrinho-body-clicked');
-        //if(closeDiv != null) closeDiv.style.display = 'block';
-        arrowiconAll.forEach(arrowicon => arrowicon.style.animationName = 'arrow-up');
-        divCarrinhoBodyHideDiv.style.display = 'flex'; 
-    } else{
-        console.log("Fechei");
+        document.querySelectorAll('.icon-setinha-animation').forEach(arrowicon => arrowicon.style.animationName = 'arrow-up');
+        document.querySelector('#carrinho-dentro-hide').style.display = 'flex'; 
+    } else
         fechar(event);
-    }
-
-   
 }
 
-const positionScroll = (floatButton, divCarrinho, divCarrinhoNav) => {
+const positionScroll = () => {
     const scroll = this.scrollY;
     const nav = document.querySelector('.header-page');
 
-    floatButton.style.display = (scroll < nav.clientHeight )? 'none' : 'flex';
-    divCarrinho.style.opacity = (scroll < nav.clientHeight + 50 )? '1' : '0.3';
-    divCarrinhoNav.style.top = (scroll < nav.clientHeight + 10 )? '-90px' : '0px';
-    
+    document.querySelector('.float-button').style.display = (scroll < nav.clientHeight )? 'none' : 'flex';
+    document.querySelector('#carrinho-body').style.opacity = (scroll < nav.clientHeight + 50 )? '1' : '0.3';
+    document.querySelector('.carrinho-nav').style.top = (scroll < nav.clientHeight + 10 )? '-90px' : '0px';
 }
 
-const scrollTop = (top = 0) => {
+const scrollTop = (topDistance = 0) => {
     window.scroll({
-        top: top,
+        top: topDistance,
         behavior: "smooth"
     });
 }
