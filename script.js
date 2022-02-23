@@ -68,17 +68,15 @@ const changeTextButtonOutroDia = () => {
 const eventCloseCarrinhoExpandedClickBody = (event) => {
     const eventTargetCarrinhoElementsInsideTop = event.target.classList.contains('carrinhos-elements-inside-top');
          
-       if(event.target.classList.contains('div-carrinho-detalhes') 
-       || event.target.classList.contains('carrinho-nav') 
-       || event.target.classList.contains('delete-item-carrinho') 
-       || event.target.classList.contains('item-svg')
-       || eventTargetCarrinhoElementsInsideTop){
-            if((event.target.classList.contains('delete-item-carrinho') && itensCarrinho.listItens.length == 0) 
-            || (eventTargetCarrinhoElementsInsideTop && itensCarrinho.listItens.length == 0))
-                fechar(event);
-            else console.log("?? o que tá rolando aqui?")
-        } else if(document.querySelector('#carrinho-body').classList.contains('carrinho-body-clicked'))
+    if(!(
+        event.target.classList.contains('div-carrinho-detalhes') 
+      || event.target.classList.contains('carrinho-nav') 
+      || event.target.classList.contains('delete-item-carrinho') 
+      || event.target.classList.contains('item-svg')
+      || eventTargetCarrinhoElementsInsideTop
+    ) && (document.querySelector('#carrinho-body').classList.contains('carrinho-body-clicked'))){
             fechar(event);
+    }
 }
 
 const changeValorAndQtdCarrinho = () => {
@@ -195,9 +193,16 @@ const eventDeletarItemCarrinho = () => {
     const buttonDelete = document.querySelectorAll('.delete-item-carrinho');
 
     buttonDelete.forEach(button => {
-        button.addEventListener('click', () => {
+        button.addEventListener('click', async (event) => {
             itensCarrinho.listItens.splice(button.id, 1);
-            changeListCarrinho();
+            await changeListCarrinho();
+            
+            event.stopPropagation();
+            
+            if(itensCarrinho.listItens.length == 0){
+                //Fechar o carrinho quando chegar a 0
+                fechar(event)
+            }
 
             let list = document.querySelectorAll(`[id="${button.getAttribute('name')}"]`);
 
@@ -485,20 +490,19 @@ const addCardHtml = () => {
 }
 
 const fechar = (event) => {
-    if(!event.target.classList.contains('delete-item-carrinho') || itensCarrinho.listItens.length == 0){
-        const divCarrinhoBody = document.querySelector('#carrinho-body');
-        const divCarrinhoBodyHideDiv = document.querySelector('#carrinho-dentro-hide');
-        const arrowsIcons = document.querySelectorAll('.icon-setinha-animation');
-        arrowsIcons.forEach(arrowicon => arrowicon.style.animationName = 'arrow-down');
+    const divCarrinhoBody = document.querySelector('[id="carrinho-body"]');
+    const divCarrinhoBodyHideDiv = document.querySelector('#carrinho-dentro-hide');
+    const arrowsIcons = document.querySelectorAll('.icon-setinha-animation');
     
-        let closed = (!event.target.classList.contains('delete-item-carrinho') || itensCarrinho.listItens.length == 0);
-    
-        const have = divCarrinhoBody.classList.contains('carrinho-body-clicked');
-        if(have && closed){
-            divCarrinhoBody.classList.remove('carrinho-body-clicked');
-            divCarrinhoBodyHideDiv.setAttribute('style', 'display: none !important'); 
-        }           
-    }
+    //Animation arrow close
+    arrowsIcons.forEach(arrowicon => arrowicon.style.animationName = 'arrow-down');
+
+    const have = divCarrinhoBody.classList.contains('carrinho-body-clicked');
+       
+    if(have){
+        divCarrinhoBody.classList.remove('carrinho-body-clicked');
+        divCarrinhoBodyHideDiv.setAttribute('style', 'display: none !important'); 
+    }           
 }
 
 const backToCarrinhoBody = (event) => {
