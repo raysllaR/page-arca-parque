@@ -28,10 +28,14 @@ var itensCarrinho = {
 
 //Loading
 window.addEventListener('load', async ()  => {
+    if(!localStorage.getItem('listItensCarrinho'))
+        localStorage.setItem('listItensCarrinho', JSON.stringify([]))
     //consumo da API
     await getApiItens();
     //Mudar a lista do carrinho
+    
     await changeListCarrinho();
+    //else localStorage.setItem('listItensCarrinho', JSON.stringify([]));
 
     //Events element body
     document.querySelector('.carrinho-nav').addEventListener('click', backToCarrinhoBody);
@@ -371,6 +375,7 @@ const getApiItens = async (key) => {
         addGrupoHtml(listGrupo);
 
     }catch(e){
+        console.log(e);
         document.querySelector('.body-page-load').innerHTML = `
                 <div> Erro ao carregar dados do servidor! </div>
             `;
